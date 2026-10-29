@@ -1,0 +1,21 @@
+html,
+body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    /* no scrollbars */
+    background: darkgray;
+    /* the letterbox bars */
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    display: block;
+    /* removes the small gap canvas gets as an inline element */
+    background: black;
+}
