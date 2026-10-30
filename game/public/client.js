@@ -5,7 +5,6 @@ const mouse = new Set();
 const GAME_W = 1920, GAME_H = 1080;
 
 // fixed-resolution units, so these never need recalculating
-const circleX = 80, circleY = 90, circleRad = 22;
 const txtFnt = "22px monospace";
 
 let lastTime = 0;
@@ -14,6 +13,7 @@ let viewScale = 1;
 let mousePos = { x: 0, y: 0 };
 let debug = true;
 
+
 /* Player Information */
 const player = {
     x: GAME_W / 2,
@@ -21,6 +21,15 @@ const player = {
     w: 24,
     h: 48,
     speed: 200,
+};
+
+const attack = {
+    range: 80,
+    arc: Math.PI / 2,
+    active: false,
+    angle: 45,
+    timer: 6,
+    cooldown: 6,
 };
 
 function getMousePos(e) {
@@ -45,7 +54,7 @@ window.addEventListener("keyup", (e) => keys.delete(e.code));
 /* Keyboard input - END */
 
 /* Mouse Input - START */
-canvas.addEventListener("mousemove", (e) => {
+window.addEventListener("mousemove", (e) => {
     mousePos = getMousePos(e);
 });
 
@@ -93,14 +102,14 @@ function drawDebug() {
         "FPS: " + fps,
         "Keys: " + ([...keys].join(", ") || "-"),
         "Mouse: X=" + mousePos.x.toFixed(2) + ", Y=" + mousePos.y.toFixed(2) +
-        " aButtons: " + ([...mouse].join(", ") || "-"),
+        " Buttons: " + ([...mouse].join(", ") || "-"),
         "Canvas: " + canvas.width + "x" + canvas.height + " (game " + GAME_W + "x" + GAME_H + ")",
         "Player Coors: X=" + player.x.toFixed(2) + ", Y=" + player.y.toFixed(2)
     ];
     lines.forEach((text, i) => ctx.fillText(text, 10, lineH * (i + 1)));
 }
 
-/* Canvas Shapes*/
+/* Canvas Shapes */
 function drawPill(x, y, w, h, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -108,7 +117,43 @@ function drawPill(x, y, w, h, color) {
     ctx.fill();
 }
 
+function drawAttack() {
+    if (!attack.active) return;
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.arc(
+        player.x, player.y, attack.range,
+        attack.angle - attack.arc / 2,
+        attack.angle + attack.arc / 2
+    );
+    ctx.closePath();
+    ctx.fill();
+};
+
+/* END of Shape */
+
+function getAimAngle() {
+    return Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
+};
+
+function startAttack() {
+    attack.angle = getAimAngle();
+    attack.active = true;
+    attack.timer = 0.15;
+    attack.color = 0.4;
+}
+
 function update(dt) {
+    attack.cooldown = Math.max(0, attack.cooldown - dt);
+    if (attack.active) {
+        attack.timer -= dt;
+        if (attack.timer <= 0) {
+            attack.active = false;
+            attack.cooldown += attack.timer
+        }
+    }
+
     let dx = 0, dy = 0;
     if (keys.has("KeyW")) dy -= 1;
     if (keys.has("KeyS")) dy += 1;
@@ -120,12 +165,17 @@ function update(dt) {
         player.x += (dx / len) * player.speed * dt;
         player.y += (dy / len) * player.speed * dt;
     }
+
+    if (mouse.has(0) && attack.cooldown === 0) {
+        startAttack();
+    }
 }
 
 function draw() {
     ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
     ctx.clearRect(0, 0, GAME_W, GAME_H);
     drawPill(player.x - player.w / 2, player.y - player.h / 2, player.w, player.h, "#0f0");
+    drawAttack();
     if (debug) drawDebug();
 }
 
