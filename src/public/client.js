@@ -1,7 +1,9 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+
 const keys = new Set();
 const mouse = new Set();
+
 const GAME_W = 1920, GAME_H = 1080;
 
 // fixed-resolution units, so these never need recalculating
@@ -13,8 +15,6 @@ let viewScale = 1;
 let mousePos = { x: 0, y: 0 };
 let debug = true;
 
-const ATTACK_DURATION = 0.15;
-const ATTACK_COOLDOWN = 0.4;
 
 /* Player Information */
 const player = {
@@ -25,14 +25,43 @@ const player = {
     speed: 200,
 };
 
+const ATTACK_DURATION = 0.15;
+const ATTACK_COOLDOWN = 0.4;
+
 const attack = {
-    range: 80,
+    range: 120,
     arc: toRad(15),
     active: false,
     angle: 0,
     timer: 0,
     cooldown: 0,
 };
+
+const enermys = new Set();
+
+const LEVEL_PER_ENERMY = 5
+
+const world = {
+    level: 0,
+    spawned_enermy: 0,
+};
+
+const enermy = {
+    x: 0,
+    y: 0,
+    radius: 8,
+    speed: 150,
+    health: 10
+}
+
+const enermy_attack = {
+    range: 30,
+    arc: toRad(15),
+    active: false,
+    angle: 0,
+    timer: 0,
+    cooldown: 0,
+}
 
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -41,6 +70,7 @@ function getMousePos(e) {
         y: (e.clientY - rect.top) / rect.height * GAME_H
     };
 }
+
 
 /* Keyboard input */
 window.addEventListener("keydown", (e) => {
@@ -81,6 +111,7 @@ window.addEventListener("blur", () => {
 });
 
 
+
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const fit = Math.min(window.innerWidth / GAME_W, window.innerHeight / GAME_H);
@@ -96,6 +127,7 @@ function resizeCanvas() {
     viewScale = canvas.width / GAME_W;
 }
 
+
 function drawDebug() {
     ctx.font = txtFnt;
     ctx.fillStyle = "#0f0";
@@ -106,7 +138,9 @@ function drawDebug() {
         "Mouse: X=" + mousePos.x.toFixed(2) + ", Y=" + mousePos.y.toFixed(2) +
         " Buttons: " + ([...mouse].join(", ") || "-"),
         "Canvas: " + canvas.width + "x" + canvas.height + " (game " + GAME_W + "x" + GAME_H + ")",
-        "Player Coors: X=" + player.x.toFixed(2) + ", Y=" + player.y.toFixed(2)
+        "Player Coors: X=" + player.x.toFixed(2) + ", Y=" + player.y.toFixed(2),
+        "World Level: " + world.level + " | Target Enemies: " + world.spawned_enermy,
+        "Current Enermys in World: " + enermys.size
     ];
     lines.forEach((text, i) => ctx.fillText(text, 10, lineH * (i + 1)));
 }
@@ -133,14 +167,28 @@ function drawAttack() {
     ctx.fill();
 };
 
+function drawCircle(x, y, radius, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
 /* END of Shape */
 
 function getAimAngle() {
-    return Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
+    return Math.atan2(
+        mousePos.y - player.y,
+        mousePos.x - player.x
+    );
 };
 
 function toRad(deg) {
     return deg * Math.PI / 180;
+}
+
+function spawn(level) {
+    return LEVEL_PER_ENERMY + (level * 3);
 }
 
 function startAttack() {
@@ -151,6 +199,15 @@ function startAttack() {
 }
 
 function update(dt) {
+    /* world update logic */
+    if (world.spawned_enermy === enermys.size) {
+        world.level += 1;
+        world.spawned_enermy += spawn(world.level);
+        for (let i = 0; i < world.spawned_enermy; i++) {
+            enermys.add(enermy)
+        }
+    }
+
     attack.cooldown = Math.max(0, attack.cooldown - dt);
     if (attack.active) {
         attack.timer -= dt;
@@ -181,6 +238,7 @@ function draw() {
     ctx.clearRect(0, 0, GAME_W, GAME_H);
     drawPill(player.x - player.w / 2, player.y - player.h / 2, player.w, player.h, "#0f0");
     drawAttack();
+    drawCircle(347, 695, 8, "red");
     if (debug) drawDebug();
 }
 
