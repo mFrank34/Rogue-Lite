@@ -17,51 +17,22 @@ let debug = true;
 
 
 /* Player Information */
-const player = {
-    x: GAME_W / 2,
-    y: GAME_H / 2,
-    w: 24,
-    h: 48,
-    speed: 200,
-};
+const player = new Player(
+    GAME_W / 2,
+    GAME_H / 2,
+    24,
+    48,
+    200,
+    100
+);
 
-const ATTACK_DURATION = 0.15;
-const ATTACK_COOLDOWN = 0.4;
-
-const attack = {
-    range: 120,
-    arc: toRad(15),
-    active: false,
-    angle: 0,
-    timer: 0,
-    cooldown: 0,
-};
-
-const enermys = new Set();
-
-const LEVEL_PER_ENERMY = 5
+const enemies = new Set();
+const LEVEL_PER_ENEMIES = 5
 
 const world = {
     level: 0,
-    spawned_enermy: 0,
+    spawned_enemy: 0,
 };
-
-const enermy = {
-    x: 0,
-    y: 0,
-    radius: 8,
-    speed: 150,
-    health: 10
-}
-
-const enermy_attack = {
-    range: 30,
-    arc: toRad(15),
-    active: false,
-    angle: 0,
-    timer: 0,
-    cooldown: 0,
-}
 
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -70,7 +41,6 @@ function getMousePos(e) {
         y: (e.clientY - rect.top) / rect.height * GAME_H
     };
 }
-
 
 /* Keyboard input */
 window.addEventListener("keydown", (e) => {
@@ -110,8 +80,6 @@ window.addEventListener("blur", () => {
     mouse.clear();
 });
 
-
-
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const fit = Math.min(window.innerWidth / GAME_W, window.innerHeight / GAME_H);
@@ -127,7 +95,6 @@ function resizeCanvas() {
     viewScale = canvas.width / GAME_W;
 }
 
-
 function drawDebug() {
     ctx.font = txtFnt;
     ctx.fillStyle = "#0f0";
@@ -139,8 +106,8 @@ function drawDebug() {
         " Buttons: " + ([...mouse].join(", ") || "-"),
         "Canvas: " + canvas.width + "x" + canvas.height + " (game " + GAME_W + "x" + GAME_H + ")",
         "Player Coors: X=" + player.x.toFixed(2) + ", Y=" + player.y.toFixed(2),
-        "World Level: " + world.level + " | Target Enemies: " + world.spawned_enermy,
-        "Current Enermys in World: " + enermys.size
+        "World Level: " + world.level + " | Target Enemies: " + world.spawned_enemy,
+        "Current Enemies in World: " + enemies.size
     ];
     lines.forEach((text, i) => ctx.fillText(text, 10, lineH * (i + 1)));
 }
@@ -154,18 +121,25 @@ function drawPill(x, y, w, h, color) {
 }
 
 function drawAttack() {
+    const attack = player.attack;
+
     if (!attack.active) return;
+
     ctx.fillStyle = "rgba(255,255,255,0.3)";
     ctx.beginPath();
     ctx.moveTo(player.x, player.y);
+
     ctx.arc(
-        player.x, player.y, attack.range,
+        player.x,
+        player.y,
+        attack.range,
         attack.angle - attack.arc / 2,
         attack.angle + attack.arc / 2
     );
+
     ctx.closePath();
     ctx.fill();
-};
+}
 
 function drawCircle(x, y, radius, color) {
     ctx.beginPath();
@@ -188,57 +162,81 @@ function toRad(deg) {
 }
 
 function spawn(level) {
-    return LEVEL_PER_ENERMY + (level * 3);
+    return LEVEL_PER_ENEMIES + (level * 3);
 }
 
-function startAttack() {
-    attack.angle = getAimAngle();
-    attack.active = true;
-    attack.timer = ATTACK_DURATION;
-    attack.cooldown = ATTACK_COOLDOWN;
+/* Temp function */
+function spawnEnemy(x, y) {
+    enemies.add(new Enemy(x, y, 16, 150, 10));
 }
+
 
 function update(dt) {
-    /* world update logic */
-    if (world.spawned_enermy === enermys.size) {
-        world.level += 1;
-        world.spawned_enermy += spawn(world.level);
-        for (let i = 0; i < world.spawned_enermy; i++) {
-            enermys.add(enermy)
+    /* World update logic */
+    if (enemies.size === 0) {
+        world.level++;
+
+        const enemyCount = spawn(world.level);
+        world.spawned_enemy = enemyCount;
+
+        for (let i = 0; i < enemyCount; i++) {
+            spawnEnemy(
+                Math.random() * GAME_W,
+                Math.random() * GAME_H
+            );
         }
     }
-
-    attack.cooldown = Math.max(0, attack.cooldown - dt);
-    if (attack.active) {
-        attack.timer -= dt;
-        if (attack.timer <= 0) {
-            attack.active = false;
-        }
-    }
-
+    /* Player movement */
     let dx = 0, dy = 0;
+
     if (keys.has("KeyW")) dy -= 1;
     if (keys.has("KeyS")) dy += 1;
     if (keys.has("KeyA")) dx -= 1;
     if (keys.has("KeyD")) dx += 1;
 
-    if (dx || dy) {
-        const len = Math.hypot(dx, dy);
-        player.x += (dx / len) * player.speed * dt;
-        player.y += (dy / len) * player.speed * dt;
+    player.movePlayer(dx, dy, dt);
+
+    /* Player attack */
+    player.update(dt);
+
+    if (mouse.has(0)) {
+        player.attackTarget(getAimAngle());
     }
 
-    if (mouse.has(0) && attack.cooldown === 0) {
-        startAttack();
+    /* Enemy updates */
+    for (const enemy of enemies) {
+        enemy.update?.(dt);
     }
 }
+
+
 
 function draw() {
     ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
     ctx.clearRect(0, 0, GAME_W, GAME_H);
-    drawPill(player.x - player.w / 2, player.y - player.h / 2, player.w, player.h, "#0f0");
+
+    // Draw player
+    drawPill(
+        player.x - player.w / 2,
+        player.y - player.h / 2,
+        player.w,
+        player.h,
+        "#0f0"
+    );
+
+    // Draw attack
     drawAttack();
-    drawCircle(347, 695, 8, "red");
+
+    // Draw enemies
+    for (const enemy of enemies) {
+        drawCircle(
+            enemy.x,
+            enemy.y,
+            enemy.radius,
+            "#FF073A"
+        );
+    }
+
     if (debug) drawDebug();
 }
 

@@ -27,6 +27,7 @@ class Attack {
         this.timer = 0;
         this.cooldown = 0;
     }
+
     start(angle) {
         if (this.cooldown > 0) return;
 
@@ -36,7 +37,7 @@ class Attack {
         this.cooldown = this.cooldownTime;
     }
 
-    update(deltaTime) {
+    update(dt) {
         if (this.timer > 0) {
             this.timer -= dt;
 
@@ -68,12 +69,23 @@ class Player extends Entity {
         this.attack.update(dt);
     }
 
+    movePlayer(dx, dy, deltaTime) {
+        const len = Math.hypot(dx, dy);
+
+        if (len > 0) {
+            dx /= len;
+            dy /= len;
+        }
+
+        this.move(dx, dy, deltaTime);
+    }
+
     attackTarget(angle) {
         this.attack.start(angle);
     }
 }
 
-class Enemy extends Enemy {
+class Enemy extends Entity {
     constructor(x, y, radius, speed, health) {
         super(x, y, speed, health);
         this.radius = radius;
