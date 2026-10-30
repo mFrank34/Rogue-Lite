@@ -13,6 +13,8 @@ let viewScale = 1;
 let mousePos = { x: 0, y: 0 };
 let debug = true;
 
+const ATTACK_DURATION = 0.15;
+const ATTACK_COOLDOWN = 0.4;
 
 /* Player Information */
 const player = {
@@ -25,11 +27,11 @@ const player = {
 
 const attack = {
     range: 80,
-    arc: Math.PI / 2,
+    arc: toRad(15),
     active: false,
-    angle: 45,
-    timer: 6,
-    cooldown: 6,
+    angle: 0,
+    timer: 0,
+    cooldown: 0,
 };
 
 function getMousePos(e) {
@@ -137,11 +139,15 @@ function getAimAngle() {
     return Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
 };
 
+function toRad(deg) {
+    return deg * Math.PI / 180;
+}
+
 function startAttack() {
     attack.angle = getAimAngle();
     attack.active = true;
-    attack.timer = 0.15;
-    attack.color = 0.4;
+    attack.timer = ATTACK_DURATION;
+    attack.cooldown = ATTACK_COOLDOWN;
 }
 
 function update(dt) {
@@ -150,7 +156,6 @@ function update(dt) {
         attack.timer -= dt;
         if (attack.timer <= 0) {
             attack.active = false;
-            attack.cooldown += attack.timer
         }
     }
 
