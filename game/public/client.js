@@ -42,11 +42,9 @@ window.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("keyup", (e) => keys.delete(e.code));
-
 /* Keyboard input - END */
 
 /* Mouse Input - START */
-
 canvas.addEventListener("mousemove", (e) => {
     mousePos = getMousePos(e);
 });
@@ -64,7 +62,6 @@ document.documentElement.addEventListener("mouseleave", () => {
 });
 
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-
 /* Mouse Input - END */
 
 window.addEventListener("blur", () => {
