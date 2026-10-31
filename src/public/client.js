@@ -110,6 +110,28 @@ function drawDebug() {
         "Current Enemies in World: " + enemies.size
     ];
     lines.forEach((text, i) => ctx.fillText(text, 10, lineH * (i + 1)));
+
+    ctx.strokeStyle = "#00ffff";
+    ctx.lineWidth = 2;
+
+    // Player hitbox
+    ctx.beginPath();
+    ctx.roundRect(
+        player.x - player.w / 2,
+        player.y - player.h / 2,
+        player.w,
+        player.h,
+        player.w / 2
+    );
+    ctx.stroke();
+    ctx.stroke();
+
+    // Enemy hitboxes
+    for (const enemy of enemies) {
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
 }
 
 /* Canvas Shapes */
@@ -203,13 +225,27 @@ function update(dt) {
         player.attackTarget(getAimAngle());
     }
 
-    /* Enemy updates */
+    /* Player-to-enemy collisions */
     for (const enemy of enemies) {
-        enemy.update?.(dt);
+        if (player.collidesWith(enemy)) {
+            player.resolveCollision(enemy);
+        }
+    }
+
+    /* Enemy-to-enemy collisions */
+    const enemyArray = [...enemies];
+
+    for (let i = 0; i < enemyArray.length; i++) {
+        for (let j = i + 1; j < enemyArray.length; j++) {
+            const enemyA = enemyArray[i];
+            const enemyB = enemyArray[j];
+
+            if (enemyA.collidesWith(enemyB)) {
+                enemyA.resolveMutualCollision(enemyB);
+            }
+        }
     }
 }
-
-
 
 function draw() {
     ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
