@@ -1,27 +1,17 @@
 {
-  "name": "rouge-lite",
+  "name": "Rogue-Lite",
   "version": "1.0.0",
-  "description": "a web game",
-  "keywords": [],
-  "homepage": "https://github.com/mFrank34/Rogue-Lite#readme",
-  "bugs": {
-    "url": "https://github.com/mFrank34/Rogue-Lite/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mFrank34/Rogue-Lite.git"
-  },
-  "license": "GPL-3.0",
-  "author": "Michael Franks",
-  "type": "commonjs",
-  "main": "server.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@12.16.1",
   "dependencies": {
-    "ejs": "^7.0.2",
     "express": "^5.3.0",
-    "ws": "^8.22.0"
+    "socket.io": "^4.8.4"
   }
 }

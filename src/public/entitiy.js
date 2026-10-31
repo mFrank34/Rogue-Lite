@@ -1,12 +1,20 @@
 
 class Entity {
-    constructor(x, y, speed, health) {
+    constructor(x, y, radius, speed, health) {
         this.x = x;
         this.y = y;
 
+        this.radius = radius;
         this.speed = speed;
         this.health = health;
         this.maxHealth = health;
+    }
+
+    collidesWith(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+
+        return Math.hypot(dx, dy) < this.radius + other.radius;
     }
 
     move(dx, dy, deltaTime) {
@@ -15,48 +23,10 @@ class Entity {
     }
 }
 
-class Attack {
-    constructor(range, arc, duration, cooldown) {
-        this.range = range;
-        this.arc = arc;
-        this.duration = duration;
-        this.cooldownTime = cooldown;
-
-        this.active = false;
-        this.angle = 0;
-        this.timer = 0;
-        this.cooldown = 0;
-    }
-
-    start(angle) {
-        if (this.cooldown > 0) return;
-
-        this.active = true;
-        this.angle = angle;
-        this.timer = this.duration;
-        this.cooldown = this.cooldownTime;
-    }
-
-    update(dt) {
-        if (this.timer > 0) {
-            this.timer -= dt;
-
-            if (this.timer <= 0) {
-                this.active = false;
-                this.timer = 0;
-            }
-        }
-
-        if (this.cooldown > 0) {
-            this.cooldown -= dt;
-            this.cooldown = Math.max(0, this.cooldown);
-        }
-    }
-}
 
 class Player extends Entity {
     constructor(x, y, w, h, speed, health) {
-        super(x, y, speed, health);
+        super(x, y, Math.min(w, h) / 2, speed, health);
         this.w = w;
         this.h = h;
 
@@ -87,7 +57,6 @@ class Player extends Entity {
 
 class Enemy extends Entity {
     constructor(x, y, radius, speed, health) {
-        super(x, y, speed, health);
-        this.radius = radius;
+        super(x, y, radius, speed, health);
     }
 }
