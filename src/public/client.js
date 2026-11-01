@@ -27,7 +27,7 @@ const player = new Player(
 );
 
 const enemies = new Set();
-const LEVEL_PER_ENEMIES = 10000
+const LEVEL_PER_ENEMIES = 5000
 
 const world = {
     level: 0,
