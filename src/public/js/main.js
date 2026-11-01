@@ -16,7 +16,11 @@ const fpsCounter = createFpsCounter();
 const cam = { x: 0, y: 0 };
 let debug = true;
 
-const findMe = () => net.snap?.players.find((p) => p.id === net.myId);
+// new variable that holds the interpolated world for this frame
+let view = null;
+
+// CHANGE 2: reads from `view` instead of `net.snap`
+const findMe = () => view?.players.find((p) => p.id === net.myId);
 
 /* Send input to the server at a fixed rate, independent of frame rate */
 setInterval(() => {
@@ -34,6 +38,9 @@ function loop(timestamp) {
 
     if (input.takeDebugToggle()) debug = !debug;
 
+    // CHANGE 3: ask the net module for this frame's interpolated world
+    view = net.getView();
+
     const me = findMe();
     if (me) {
         cam.x = me.x - VIEW_W / 2;
@@ -41,7 +48,7 @@ function loop(timestamp) {
     }
 
     renderer.draw({
-        snap: net.snap,
+        snap: view,                       // CHANGE 4a: was net.snap
         cam,
         myId: net.myId,
         world: net.world,
@@ -52,7 +59,8 @@ function loop(timestamp) {
                 mouse: input.mouse,
                 mousePos: input.mousePos,
                 canvas, viewW: VIEW_W, viewH: VIEW_H,
-                me, snap: net.snap, connected: net.connected
+                me, snap: view,           // CHANGE 4b: was net.snap
+                connected: net.connected
             }
             : null
     });
