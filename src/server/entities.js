@@ -1,8 +1,12 @@
 import { Attack } from './combat.js';
 import { toRad } from '../shared/math.js';
 
+let nextId = 1;
+
 class Entity {
     constructor(x, y, radius, speed, health) {
+        this.id = nextId++;     // unique per entity
+        this.idx = 0;           // used by the collision grid
         this.x = x;
         this.y = y;
 
