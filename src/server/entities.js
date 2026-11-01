@@ -1,3 +1,5 @@
+import { Attack } from './combat.js';
+import { toRad } from '../shared/math.js';
 
 class Entity {
     constructor(x, y, radius, speed, health) {
@@ -41,7 +43,7 @@ class Entity {
 }
 
 
-class Player extends Entity {
+export class Player extends Entity {
     constructor(x, y, w, h, speed, health) {
         super(x, y, w / 2, speed, health);
 
@@ -79,7 +81,7 @@ class Player extends Entity {
     }
 }
 
-class Enemy extends Entity {
+export class Enemy extends Entity {
     constructor(x, y, radius, speed, health) {
         super(x, y, radius, speed, health);
     }
