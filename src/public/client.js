@@ -27,12 +27,67 @@ const player = new Player(
 );
 
 const enemies = new Set();
-const LEVEL_PER_ENEMIES = 5
+const LEVEL_PER_ENEMIES = 10000
 
 const world = {
     level: 0,
     spawned_enemy: 0,
 };
+
+/** Improving the colliusion maths */
+const CELL = 32;
+const COLS = Math.ceil(GAME_W / CELL);
+const ROWS = Math.ceil(GAME_H / CELL);
+const grid = Array.from({ length: COLS * ROWS }, () => []);
+
+function cellOf(v, max) {
+    return Math.min(max - 1, Math.max(0, Math.floor(v / CELL)));
+}
+
+function rebuildGrid(list) {
+    for (const cell of grid) cell.length = 0;
+    for (let i = 0; i < list.length; i++) {
+        const e = list[i];
+        e.idx = i;                                   // assigned for ALL enemies up front
+        grid[cellOf(e.y, ROWS) * COLS + cellOf(e.x, COLS)].push(e);
+    }
+}
+
+function separate(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const minDist = a.radius + b.radius;
+    const d2 = dx * dx + dy * dy;
+    if (d2 >= minDist * minDist) return;
+
+    let d = Math.sqrt(d2), nx, ny;
+    if (d < 0.0001) {
+        const ang = Math.random() * Math.PI * 2;
+        nx = Math.cos(ang); ny = Math.sin(ang); d = 0;
+    } else {
+        nx = dx / d; ny = dy / d;
+    }
+
+    const push = (minDist - d) / 2;
+    a.x -= nx * push; a.y -= ny * push;
+    b.x += nx * push; b.y += ny * push;
+}
+
+function resolveEnemyCollisions(list) {
+    rebuildGrid(list);
+
+    for (let i = 0; i < list.length; i++) {
+        const a = list[i];
+        const cx = cellOf(a.x, COLS), cy = cellOf(a.y, ROWS);
+
+        for (let ny = Math.max(0, cy - 1); ny <= Math.min(ROWS - 1, cy + 1); ny++) {
+            for (let nx = Math.max(0, cx - 1); nx <= Math.min(COLS - 1, cx + 1); nx++) {
+                for (const b of grid[ny * COLS + nx]) {
+                    if (a.idx < b.idx) separate(a, b);   // also skips b === a
+                }
+            }
+        }
+    }
+}
 
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -208,6 +263,7 @@ function update(dt) {
             );
         }
     }
+
     /* Player movement */
     let dx = 0, dy = 0;
 
@@ -233,18 +289,7 @@ function update(dt) {
     }
 
     /* Enemy-to-enemy collisions */
-    const enemyArray = [...enemies];
-
-    for (let i = 0; i < enemyArray.length; i++) {
-        for (let j = i + 1; j < enemyArray.length; j++) {
-            const enemyA = enemyArray[i];
-            const enemyB = enemyArray[j];
-
-            if (enemyA.collidesWith(enemyB)) {
-                enemyA.resolveMutualCollision(enemyB);
-            }
-        }
-    }
+    resolveEnemyCollisions([...enemies]);
 }
 
 function draw() {
