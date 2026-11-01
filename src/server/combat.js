@@ -1,5 +1,5 @@
 
-class Attack {
+export class Attack {
     constructor(range, arc, duration, cooldown) {
         this.range = range;
         this.arc = arc;
