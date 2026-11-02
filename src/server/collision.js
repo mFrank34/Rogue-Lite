@@ -57,3 +57,41 @@ export function resolveEnemyCollisions(grid, list) {
         }
     }
 }
+
+export function checkAttackWithGrid(grid, player, onHitCallback) {
+    // If the attack isn't active, skip immediately
+    if (!player.attack.active) return;
+
+    const range = player.attack.range;
+    const { cell, cols, rows, cells } = grid;
+
+    // 1. Calculate the bounding box of the attack in world coordinates
+    const minX = player.x - range;
+    const maxX = player.x + range;
+    const minY = player.y - range;
+    const maxY = player.y + range;
+
+    // 2. Convert world coordinates into grid cell indices (clamped to grid bounds)
+    const minCx = Math.max(0, Math.floor(minX / cell));
+    const maxCx = Math.min(cols - 1, Math.floor(maxX / cell));
+    const minCy = Math.max(0, Math.floor(minY / cell));
+    const maxCy = Math.min(rows - 1, Math.floor(maxY / cell));
+
+    // 3. Loop ONLY through the specific cells covered by the attack range
+    for (let cy = minCy; cy <= maxCy; cy++) {
+        for (let cx = minCx; cx <= maxCx; cx++) {
+            const cellIndex = cy * cols + cx;
+            const cellEntities = cells[cellIndex];
+
+            // 4. Check each enemy inside these relevant cells
+            for (const enemy of cellEntities) {
+                // Let your Attack class handle the precise distance + arc math
+                if (player.attack.tryHit(player.x, player.y, enemy)) {
+                    if (onHitCallback) {
+                        onHitCallback(player, enemy);
+                    }
+                }
+            }
+        }
+    }
+}
